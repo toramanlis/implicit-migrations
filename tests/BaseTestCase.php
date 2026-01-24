@@ -54,19 +54,19 @@ abstract class BaseTestCase extends TestCase
         return static::testPath(['_tmp', ...$parts]);
     }
 
-    protected function carryData(string|array $files, string $directory = ''): void
+    protected function carryData(string|array $files, string $directory = '', $require = false): void
     {
         $directory = trim($directory, DIRECTORY_SEPARATOR);
 
         if (is_string($files)) {
-            $this->carryData([$files], $directory);
+            $this->carryData([$files], $directory, $require);
             return;
         }
 
         foreach ($files as $key => $value) {
             if (is_array($value)) {
                 $subdirectory = is_string($key) ? trim($key, DIRECTORY_SEPARATOR) : '';
-                $this->carryData($value, $directory . DIRECTORY_SEPARATOR . $subdirectory);
+                $this->carryData($value, $directory . DIRECTORY_SEPARATOR . $subdirectory, $require);
                 continue;
             }
 
@@ -87,7 +87,7 @@ abstract class BaseTestCase extends TestCase
                     $entries[$relativeSource . DIRECTORY_SEPARATOR . $child] = $value . DIRECTORY_SEPARATOR . $child;
                 }
 
-                $this->carryData($entries, $directory);
+                $this->carryData($entries, $directory, $require);
                 continue;
             }
 
@@ -109,13 +109,18 @@ abstract class BaseTestCase extends TestCase
             }
 
             file_put_contents($target, file_get_contents($source));
+
+            if ($require) {
+                require_once($target);
+            }
+
             $this->itemsCarried[] = $target;
         }
     }
 
     protected function carryModels(array $models)
     {
-        $this->carryData([static::path(['app', 'Models']) => $models]);
+        $this->carryData([static::path(['app', 'Models']) => $models], require: true);
     }
 
     protected function carryMigrations(array $migrations)

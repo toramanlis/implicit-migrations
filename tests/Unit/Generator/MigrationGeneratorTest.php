@@ -3,22 +3,20 @@
 namespace Toramanlis\Tests\Unit\Generator;
 
 use Exception;
-use Illuminate\Support\Fluent;
-use PHPUnit\Framework\MockObject\Stub;
-use ReflectionClass;
 use ReflectionMethod;
-use stdClass;
-use Toramanlis\ImplicitMigrations\Attributes\IndexType;
 use Toramanlis\ImplicitMigrations\Blueprint\BlueprintDiff;
 use Toramanlis\ImplicitMigrations\Blueprint\Manager;
 use Toramanlis\ImplicitMigrations\Blueprint\SimplifyingBlueprint;
 use Toramanlis\ImplicitMigrations\Generator\MigrationGenerator;
+use Toramanlis\Tests\Data\Models\Dummy;
 use Toramanlis\Tests\Unit\BaseTestCase;
 
 class MigrationGeneratorTest extends BaseTestCase
 {
     public function testHandlesOffModel()
     {
+        $this->carryModels(['Dummy.php']);
+
         $this->mock(Manager::class)
             ->expects('applyRelationshipsToBlueprints')->once()->getMock()
             ->expects('ensureIndexColumns')->once()->getMock()
@@ -26,7 +24,7 @@ class MigrationGeneratorTest extends BaseTestCase
             ->expects('getBlueprints')->once()->andReturn([])->getMock();
 
         $generator = $this->make(MigrationGenerator::class, ['existingMigrations' => []]);
-        $generator->generate([stdClass::class]);
+        $generator->generate([Dummy::class]);
 
         $this->addToAssertionCount(1);
     }

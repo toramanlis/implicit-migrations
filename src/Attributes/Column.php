@@ -200,7 +200,7 @@ class Column extends MigrationAttribute
         $attributes = [];
 
         foreach (static::SUPPORTED_ATTRIBUTES as $attributeName) {
-            if (null === $this->{$attributeName}) {
+            if (!$this->{$attributeName}) {
                 continue;
             }
 
@@ -227,7 +227,7 @@ class Column extends MigrationAttribute
                 continue;
             }
 
-            if (false !== $attributes[$modifier]) {
+            if ($attributes[$modifier]) {
                 $column->$modifier($attributes[$modifier]);
             }
         }
