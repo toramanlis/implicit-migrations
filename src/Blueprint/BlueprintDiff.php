@@ -305,7 +305,7 @@ class BlueprintDiff implements Migratable
                 }
 
                 if ($fromColumn->name === $toColumn->name) {
-                    if (static::attributesEqual($fromColumn, $toColumn)) {
+                    if (static::attributesEqual($fromColumn, $toColumn, ['change'])) {
                         $unchangedColumns[] = $fromColumn->name;
                         continue 2;
                     }
@@ -357,7 +357,7 @@ class BlueprintDiff implements Migratable
                     continue;
                 }
 
-                if (static::attributesEqual($fromCommand, $toCommand, ['index'])) {
+                if (static::attributesEqual($fromCommand, $toCommand, ['index', 'change'])) {
                     if ($fromCommand->index === $toCommand->index) {
                         unset($renamedIndexes[$fromCommand->index]);
                         $unchangedIndexes[] = $fromCommand->index;

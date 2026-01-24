@@ -8,16 +8,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Fluent;
 use Illuminate\Support\Str;
 use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionMethod;
+use ReflectionNamedType;
 use ReflectionProperty;
+use stdClass;
 use Toramanlis\ImplicitMigrations\Attributes\Column;
 use Toramanlis\ImplicitMigrations\Attributes\ForeignKey;
 use Toramanlis\ImplicitMigrations\Attributes\Index;
-use Toramanlis\ImplicitMigrations\Attributes\IndexType;
 use Toramanlis\ImplicitMigrations\Attributes\MigrationAttribute;
 use Toramanlis\ImplicitMigrations\Attributes\Off;
 use Toramanlis\ImplicitMigrations\Attributes\PivotColumn;
@@ -157,6 +157,41 @@ class Manager
         return $blueprints;
     }
 
+    protected static function getModelInstance(string $modelName, ?ReflectionClass $modelReflection = null): Model
+    {
+        $modelReflection = $modelReflection ?? new ReflectionClass($modelName);
+
+        /** @var Model */
+        $modelInstance = new $modelName();
+
+        $peropertyFilter = ReflectionProperty::IS_PUBLIC & ~ReflectionProperty::IS_READONLY & ~ReflectionProperty::IS_STATIC;
+        foreach ($modelReflection->getProperties($peropertyFilter) as $propertyReflection) {
+            if ($propertyReflection->hasDefaultValue() || !$propertyReflection->hasType()) {
+                continue;
+            }
+
+            $propertyName = $propertyReflection->getName();
+            $reflectionType = $propertyReflection->getType();
+
+            if ($reflectionType instanceof ReflectionNamedType) {
+                if ($reflectionType->allowsNull()) {
+                    $modelInstance->$propertyName = null;
+                    continue;
+                }
+
+                $modelInstance->$propertyName = [
+                    'int' => 0,
+                    'string' => '',
+                    'float' => 0.0,
+                    'bool' => false,
+                    'array' => [],
+                ][$reflectionType->getName() ?? null] ?? new stdClass();
+            }
+        }
+
+        return $modelInstance;
+    }
+
     /**
      * @param string $modelName
      * @return array<RelationshipsRelationship>
@@ -164,7 +199,7 @@ class Manager
     public static function getRelationships(string $modelName): array
     {
         $modelReflection = new ReflectionClass($modelName);
-        $modelInstance = new $modelName();
+        $modelInstance = static::getModelInstance($modelName, $modelReflection);
 
         $relationships = [];
 
@@ -448,7 +483,7 @@ class Manager
         }
 
         /** @var Model */
-        $instance = new $modelName();
+        $instance = static::getModelInstance($modelName);
         $table = static::makeBlueprint($tableAttribute->name ?? $instance->getTable(), $tableAttribute->prefix ?? '');
 
         foreach ($attributes as $attribute) {
@@ -466,7 +501,7 @@ class Manager
     public function ensureIndexColumns(array $modelNames): void
     {
         foreach ($modelNames as $modelName) {
-            $table = $this->blueprints[(new $modelName())->getTable()] ?? null;
+            $table = $this->blueprints[(static::getModelInstance($modelName))->getTable()] ?? null;
 
             if (!$table) {
                 continue;
@@ -486,7 +521,7 @@ class Manager
     protected static function inferPrimaryKey(string $modelName, Blueprint $table)
     {
         /** @var Model */
-        $instance = new $modelName();
+        $instance = static::getModelInstance($modelName);
 
         $columnExists = array_reduce(
             $table->getColumns(),
@@ -534,7 +569,7 @@ class Manager
     protected static function inferTimestamps(string $modelName, Blueprint $table)
     {
         /** @var Model */
-        $instance = new $modelName();
+        $instance = static::getModelInstance($modelName);
 
         if (!$instance->usesTimestamps()) {
             return;
@@ -569,7 +604,7 @@ class Manager
         }
 
         /** @var SoftDeletes */
-        $instance = new $modelName();
+        $instance = static::getModelInstance($modelName);
 
         $deletedAtColumn = $instance->getDeletedAtColumn();
 
