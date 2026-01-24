@@ -20,7 +20,6 @@ class CFloat extends ColumnAlias
         protected ?string $after = null
     ) {
         parent::__construct(
-            static::TYPE,
             $name,
             $nullable,
             $default,

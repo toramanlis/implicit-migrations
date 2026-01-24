@@ -21,7 +21,6 @@ class Geography extends ColumnAlias
         protected ?string $after = null
     ) {
         parent::__construct(
-            static::TYPE,
             $name,
             $nullable,
             $default,
