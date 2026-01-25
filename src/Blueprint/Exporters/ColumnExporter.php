@@ -174,8 +174,8 @@ class ColumnExporter extends Exporter
 
             return $this->exportMethodCall($type, $parameters, $modifiers);
         } else {
-            $parameters = Column::getParameters($this->definition->type, $this->attributes);
             $modifiers = array_merge($this->extractModifiers($this->attributes), $indexModifiers);
+            $parameters = Column::getParameters($this->definition->type, $this->attributes);
 
             if (empty(array_diff(array_keys($this->attributes), array_keys($parameters)))) {
                 array_unshift($parameters, $this->definition->name);
